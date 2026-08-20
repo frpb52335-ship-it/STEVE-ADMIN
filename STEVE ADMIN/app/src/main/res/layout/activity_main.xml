@@ -29,60 +29,104 @@
             android:layout_width="match_parent"
             android:layout_height="1dp"
             android:layout_marginTop="24dp"
-            android:layout_marginBottom="20dp" />
-
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="RESTRICTIONS"
-            android:textSize="22sp"
-            android:textStyle="bold" />
-
-        <Switch
-            android:id="@+id/factoryResetSwitch"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="20dp"
-            android:text="Factory Reset"
-            android:textSize="17sp" />
-
-        <Switch
-            android:id="@+id/networkResetSwitch"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="Network Reset"
-            android:textSize="17sp" />
-
-        <Switch
-            android:id="@+id/dnsSwitch"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="DNS Configuration"
-            android:textSize="17sp" />
-
-        <TextView
-            android:id="@+id/dnsStatus"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="12dp"
-            android:text="DNS: Not configured"
-            android:textSize="15sp" />
+            android:layout_marginBottom="20dp"
+            android:background="#cccccc" />
 
         <TextView
             android:id="@+id/statusText"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:text="Status: Not set up"
+            android:textSize="15sp"
+            android:layout_marginBottom="20dp" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="DEVICE MANAGEMENT"
+            android:textSize="22sp"
+            android:textStyle="bold"
+            android:layout_marginBottom="16dp" />
+
+        <Button
+            android:id="@+id/activateAdminButton"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Activate Admin"
+            android:textAllCaps="false"
+            android:layout_marginBottom="12dp" />
+
+        <Button
+            android:id="@+id/factoryResetButton"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Factory Reset"
+            android:textAllCaps="false"
+            android:layout_marginBottom="12dp" />
+
+        <Button
+            android:id="@+id/networkResetButton"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Network Reset"
+            android:textAllCaps="false"
+            android:layout_marginBottom="12dp" />
+
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
             android:layout_marginTop="20dp"
-            android:text="Restrictions are OFF"
-            android:textSize="15sp" />
+            android:layout_marginBottom="20dp"
+            android:background="#cccccc" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="DNS CONFIGURATION"
+            android:textSize="22sp"
+            android:textStyle="bold"
+            android:layout_marginBottom="16dp" />
+
+        <EditText
+            android:id="@+id/dnsHostEditText"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="Enter DNS hostname (disabled)"
+            android:inputType="text"
+            android:enabled="false"
+            android:layout_marginBottom="12dp" />
+
+        <Button
+            android:id="@+id/dnsApplyButton"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Apply DNS"
+            android:textAllCaps="false"
+            android:enabled="false"
+            android:layout_marginBottom="12dp" />
+
+        <TextView
+            android:id="@+id/dnsStatus"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="DNS: Disabled"
+            android:textSize="14sp"
+            android:layout_marginBottom="20dp" />
+
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:layout_marginTop="20dp"
+            android:layout_marginBottom="20dp"
+            android:background="#cccccc" />
 
         <Button
             android:id="@+id/removeAdminButton"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="32dp"
-            android:text="Remove Device Owner"
-            android:textAllCaps="false" />
+            android:text="Remove Admin"
+            android:textAllCaps="false"
+            android:layout_marginTop="12dp" />
 
     </LinearLayout>
 
