@@ -2,87 +2,164 @@ package com.steve.admin
 
 import android.app.admin.DevicePolicyManager
 import android.content.ComponentName
-import android.content.Context
-import android.content.SharedPreferences
 import android.os.Bundle
 import android.os.UserManager
-import android.widget.LinearLayout
-import android.widget.ScrollView
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
-import androidx.appcompat.widget.SwitchCompat
+import com.google.android.material.switchmaterial.SwitchMaterial
 
 class MainActivity : AppCompatActivity() {
 
     private lateinit var dpm: DevicePolicyManager
-    private lateinit var adminComponent: ComponentName
-    private lateinit var prefs: SharedPreferences
+    private lateinit var admin: ComponentName
+
+    private lateinit var ownerStatus: TextView
+    private lateinit var statusText: TextView
+
+    private lateinit var factoryResetSwitch: SwitchMaterial
+    private lateinit var cameraSwitch: SwitchMaterial
+    private lateinit var masterSwitch: SwitchMaterial
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        dpm = getSystemService(Context.DEVICE_POLICY_SERVICE) as DevicePolicyManager
-        adminComponent = ComponentName(this, AdminReceiver::class.java)
-        prefs = getSharedPreferences("admin_prefs", Context.MODE_PRIVATE)
+        setContentView(R.layout.activity_main)
 
-        val layout = LinearLayout(this).apply {
-            orientation = LinearLayout.VERTICAL
-            setPadding(48, 48, 48, 48)
+        dpm = getSystemService(DEVICE_POLICY_SERVICE)
+                as DevicePolicyManager
+
+        admin = ComponentName(
+            this,
+            AdminReceiver::class.java
+        )
+
+        ownerStatus = findViewById(R.id.deviceOwnerStatus)
+        statusText = findViewById(R.id.statusText)
+
+        factoryResetSwitch =
+            findViewById(R.id.factoryResetSwitch)
+
+        cameraSwitch =
+            findViewById(R.id.cameraSwitch)
+
+        masterSwitch =
+            findViewById(R.id.restrictionsSwitch)
+
+        if (!dpm.isDeviceOwnerApp(packageName)) {
+            ownerStatus.text = "Device Owner: NOT ACTIVE"
+
+            factoryResetSwitch.isEnabled = false
+            cameraSwitch.isEnabled = false
+            masterSwitch.isEnabled = false
+
+            statusText.text =
+                "Provision this app as Device Owner first."
+
+            return
         }
 
-        val statusText = TextView(this).apply {
-            textSize = 20f
-            setPadding(0, 0, 0, 32)
-        }
-        layout.addView(statusText)
+        ownerStatus.text = "Device Owner: ACTIVE"
 
-        val isOwner = dpm.isDeviceOwnerApp(packageName)
+        loadCurrentState()
 
-        if (isOwner) {
-            statusText.text = "STEVE ADMIN\nStatus: ACTIVE DEVICE OWNER"
+        factoryResetSwitch.setOnCheckedChangeListener {
+                _, enabled ->
 
-            createOfflineSwitch(layout, "Block Private DNS", UserManager.DISALLOW_CONFIG_PRIVATE_DNS, "dns_key")
-            createOfflineSwitch(layout, "Block Factory Reset", UserManager.DISALLOW_FACTORY_RESET, "reset_key")
-            createOfflineSwitch(layout, "Block Network Reset", UserManager.DISALLOW_NETWORK_RESET, "net_reset_key")
-            createOfflineSwitch(layout, "Block Wi-Fi Settings Config", UserManager.DISALLOW_CONFIG_WIFI, "wifi_key")
-            createOfflineSwitch(layout, "Block Mobile Network Config", UserManager.DISALLOW_CONFIG_MOBILE_NETWORKS, "mobile_key")
-        } else {
-            statusText.text = "STEVE ADMIN\nStatus: NOT DEVICE OWNER\nPlease provision via ADB."
+            if (enabled) {
+                blockFactoryReset()
+            } else {
+                allowFactoryReset()
+            }
+
+            updateStatus()
         }
 
-        val scrollView = ScrollView(this)
-        scrollView.addView(layout)
-        setContentView(scrollView)
+        cameraSwitch.setOnCheckedChangeListener {
+                _, enabled ->
+
+            dpm.setCameraDisabled(
+                admin,
+                enabled
+            )
+
+            updateStatus()
+        }
+
+        masterSwitch.setOnCheckedChangeListener {
+                _, enabled ->
+
+            if (enabled) {
+                enableRestrictions()
+            } else {
+                disableRestrictions()
+            }
+
+            loadCurrentState()
+            updateStatus()
+        }
     }
 
-    private fun createOfflineSwitch(
-        parent: LinearLayout, 
-        title: String, 
-        restriction: String, 
-        prefKey: String
-    ) {
-        val switch = SwitchCompat(this).apply {
-            text = title
-            textSize = 16f
-            setPadding(0, 24, 0, 24)
-            isChecked = prefs.getBoolean(prefKey, false)
-        }
-
-        toggleRestriction(restriction, switch.isChecked)
-
-        switch.setOnCheckedChangeListener { _, isChecked ->
-            prefs.edit().putBoolean(prefKey, isChecked).apply()
-            toggleRestriction(restriction, isChecked)
-        }
-
-        parent.addView(switch)
+    private fun blockFactoryReset() {
+        dpm.addUserRestriction(
+            admin,
+            UserManager.DISALLOW_FACTORY_RESET
+        )
     }
 
-    private fun toggleRestriction(restriction: String, enable: Boolean) {
-        if (enable) {
-            dpm.addUserRestriction(adminComponent, restriction)
-        } else {
-            dpm.clearUserRestriction(adminComponent, restriction)
-        }
+    private fun allowFactoryReset() {
+        dpm.clearUserRestriction(
+            admin,
+            UserManager.DISALLOW_FACTORY_RESET
+        )
+    }
+
+    private fun enableRestrictions() {
+        blockFactoryReset()
+
+        dpm.setCameraDisabled(
+            admin,
+            true
+        )
+    }
+
+    private fun disableRestrictions() {
+        allowFactoryReset()
+
+        dpm.setCameraDisabled(
+            admin,
+            false
+        )
+    }
+
+    private fun loadCurrentState() {
+
+        factoryResetSwitch.isChecked =
+            dpm.getUserRestrictions(admin)
+                .getBoolean(
+                    UserManager.DISALLOW_FACTORY_RESET,
+                    false
+                )
+
+        cameraSwitch.isChecked =
+            dpm.getCameraDisabled(admin)
+
+        masterSwitch.isChecked =
+            factoryResetSwitch.isChecked &&
+            cameraSwitch.isChecked
+    }
+
+    private fun updateStatus() {
+
+        val factoryBlocked =
+            factoryResetSwitch.isChecked
+
+        val cameraBlocked =
+            cameraSwitch.isChecked
+
+        statusText.text =
+            "Factory reset: " +
+                    if (factoryBlocked) "BLOCKED" else "ALLOWED" +
+                    "\nCamera: " +
+                    if (cameraBlocked) "DISABLED" else "ENABLED"
     }
 }
