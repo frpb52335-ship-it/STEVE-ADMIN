@@ -26,11 +26,33 @@ jobs:
         with:
           gradle-version: "8.2"
 
+      - name: Show project files
+        working-directory: "STEVE ADMIN"
+        run: |
+          echo "Current directory:"
+          pwd
+          echo "Project files:"
+          find . -maxdepth 3 -type f | sort
+
+      - name: Check Gradle
+        working-directory: "STEVE ADMIN"
+        run: |
+          gradle --version
+
       - name: Build debug APK
         working-directory: "STEVE ADMIN"
-        run: gradle assembleDebug --no-daemon
+        run: |
+          gradle assembleDebug --no-daemon --stacktrace --info
 
-      - name: Upload APK
+      - name: Show generated APK
+        if: success()
+        working-directory: "STEVE ADMIN"
+        run: |
+          echo "Generated APK files:"
+          find app/build/outputs -type f -name "*.apk" -print
+
+      - name: Upload debug APK
+        if: success()
         uses: actions/upload-artifact@v4
         with:
           name: STEVE-ADMIN-debug
