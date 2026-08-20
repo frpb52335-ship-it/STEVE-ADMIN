@@ -4,8 +4,10 @@ import android.app.admin.DevicePolicyManager
 import android.content.ComponentName
 import android.os.Bundle
 import android.os.UserManager
+import android.widget.Button
 import android.widget.Switch
 import android.widget.TextView
+import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 
 class MainActivity : AppCompatActivity() {
@@ -15,10 +17,11 @@ class MainActivity : AppCompatActivity() {
 
     private lateinit var ownerStatus: TextView
     private lateinit var statusText: TextView
+    private lateinit var dnsStatus: TextView
 
     private lateinit var factoryResetSwitch: Switch
-    private lateinit var cameraSwitch: Switch
-    private lateinit var masterSwitch: Switch
+    private lateinit var networkResetSwitch: Switch
+    private lateinit var dnsSwitch: Switch
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -35,32 +38,37 @@ class MainActivity : AppCompatActivity() {
 
         ownerStatus = findViewById(R.id.deviceOwnerStatus)
         statusText = findViewById(R.id.statusText)
+        dnsStatus = findViewById(R.id.dnsStatus)
 
         factoryResetSwitch =
             findViewById(R.id.factoryResetSwitch)
 
-        cameraSwitch =
-            findViewById(R.id.cameraSwitch)
+        networkResetSwitch =
+            findViewById(R.id.networkResetSwitch)
 
-        masterSwitch =
-            findViewById(R.id.restrictionsSwitch)
+        dnsSwitch =
+            findViewById(R.id.dnsSwitch)
+
+        val removeAdminButton: Button =
+            findViewById(R.id.removeAdminButton)
 
         if (!dpm.isDeviceOwnerApp(packageName)) {
-            ownerStatus.text = "Device Owner: NOT ACTIVE"
 
-            factoryResetSwitch.isEnabled = false
-            cameraSwitch.isEnabled = false
-            masterSwitch.isEnabled = false
+            ownerStatus.text =
+                "Device Owner: NOT ACTIVE"
+
+            disableControls()
 
             statusText.text =
-                "Provision this app as Device Owner first."
+                "Set STEVE ADMIN as Device Owner first."
 
             return
         }
 
-        ownerStatus.text = "Device Owner: ACTIVE"
+        ownerStatus.text =
+            "Device Owner: ACTIVE"
 
-        loadCurrentState()
+        loadFactoryResetState()
 
         factoryResetSwitch.setOnCheckedChangeListener {
                 _, enabled ->
@@ -74,29 +82,89 @@ class MainActivity : AppCompatActivity() {
             updateStatus()
         }
 
-        cameraSwitch.setOnCheckedChangeListener {
+        networkResetSwitch.setOnCheckedChangeListener {
                 _, enabled ->
 
-            dpm.setCameraDisabled(
-                admin,
-                enabled
-            )
+            Toast.makeText(
+                this,
+                if (enabled)
+                    "Network reset restriction selected"
+                else
+                    "Network reset restriction disabled",
+                Toast.LENGTH_SHORT
+            ).show()
 
             updateStatus()
         }
 
-        masterSwitch.setOnCheckedChangeListener {
+        dnsSwitch.setOnCheckedChangeListener {
                 _, enabled ->
 
-            if (enabled) {
-                enableRestrictions()
-            } else {
-                disableRestrictions()
+            dnsStatus.text =
+                if (enabled)
+                    "DNS: Configuration enabled"
+                else
+                    "DNS: Not configured"
+
+            updateStatus()
+        }
+
+        removeAdminButton.setOnClickListener {
+
+            if (!dpm.isDeviceOwnerApp(packageName)) {
+
+                Toast.makeText(
+                    this,
+                    "STEVE ADMIN is not Device Owner.",
+                    Toast.LENGTH_SHORT
+                ).show()
+
+                return@setOnClickListener
             }
 
-            loadCurrentState()
-            updateStatus()
+            try {
+
+                // Remove the factory-reset restriction first.
+                dpm.clearUserRestriction(
+                    admin,
+                    UserManager.DISALLOW_FACTORY_RESET
+                )
+
+                // Testing/development only.
+                @Suppress("DEPRECATION")
+                dpm.clearDeviceOwnerApp(packageName)
+
+                ownerStatus.text =
+                    "Device Owner: REMOVED"
+
+                factoryResetSwitch.isEnabled = false
+                networkResetSwitch.isEnabled = false
+                dnsSwitch.isEnabled = false
+                removeAdminButton.isEnabled = false
+
+                statusText.text =
+                    "Device Owner removed. You can uninstall STEVE ADMIN."
+Toast.makeText(
+                    this,
+                    "Device Owner removed",
+                    Toast.LENGTH_LONG
+                ).show()
+
+            } catch (e: SecurityException) {
+
+                Toast.makeText(
+                    this,
+                    "Could not remove Device Owner: ${e.message}",
+                    Toast.LENGTH_LONG
+                ).show()
+            }
         }
+    }
+
+    private fun disableControls() {
+        factoryResetSwitch.isEnabled = false
+        networkResetSwitch.isEnabled = false
+        dnsSwitch.isEnabled = false
     }
 
     private fun blockFactoryReset() {
@@ -104,6 +172,12 @@ class MainActivity : AppCompatActivity() {
             admin,
             UserManager.DISALLOW_FACTORY_RESET
         )
+
+        Toast.makeText(
+            this,
+            "Factory reset restriction ON",
+            Toast.LENGTH_SHORT
+        ).show()
     }
 
     private fun allowFactoryReset() {
@@ -111,57 +185,49 @@ class MainActivity : AppCompatActivity() {
             admin,
             UserManager.DISALLOW_FACTORY_RESET
         )
+
+        Toast.makeText(
+            this,
+            "Factory reset restriction OFF",
+            Toast.LENGTH_SHORT
+        ).show()
     }
 
-    private fun enableRestrictions() {
-        blockFactoryReset()
+    private fun loadFactoryResetState() {
 
-        dpm.setCameraDisabled(
-            admin,
-            true
-        )
-    }
-
-    private fun disableRestrictions() {
-        allowFactoryReset()
-
-        dpm.setCameraDisabled(
-            admin,
-            false
-        )
-    }
-
-    private fun loadCurrentState() {
+        val restrictions =
+            dpm.getUserRestrictions(admin)
 
         factoryResetSwitch.isChecked =
-            dpm.getUserRestrictions(admin)
-                .getBoolean(
-                    UserManager.DISALLOW_FACTORY_RESET,
-                    false
-                )
-
-        cameraSwitch.isChecked =
-            dpm.getCameraDisabled(admin)
-
-        masterSwitch.isChecked =
-            factoryResetSwitch.isChecked &&
-            cameraSwitch.isChecked
+            restrictions.getBoolean(
+                UserManager.DISALLOW_FACTORY_RESET,
+                false
+            )
     }
 
     private fun updateStatus() {
 
-        val factoryBlocked =
-            factoryResetSwitch.isChecked
+        val factory =
+            if (factoryResetSwitch.isChecked)
+                "BLOCKED"
+            else
+                "ALLOWED"
 
-        val cameraBlocked =
-            cameraSwitch.isChecked
+        val network =
+            if (networkResetSwitch.isChecked)
+                "RESTRICTED"
+            else
+                "NORMAL"
+
+        val dns =
+            if (dnsSwitch.isChecked)
+                "CONFIGURED"
+            else
+                "NORMAL"
 
         statusText.text =
-            "Factory reset: " +
-                    if (factoryBlocked) "BLOCKED"
-                    else "ALLOWED" +
-                    "\nCamera: " +
-                    if (cameraBlocked) "DISABLED"
-                    else "ENABLED"
+            "Factory reset: $factory\n" +
+            "Network reset: $network\n" +
+            "DNS: $dns"
     }
 }
