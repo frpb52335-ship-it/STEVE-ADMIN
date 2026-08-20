@@ -25,6 +25,22 @@
             android:text="Checking Device Owner..."
             android:textSize="16sp" />
 
+        <TextView
+            android:id="@+id/statusText"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:text="Status: Initializing..."
+            android:textSize="14sp" />
+
+        <TextView
+            android:id="@+id/dnsStatus"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:text="DNS: Disabled"
+            android:textSize="14sp" />
+
         <View
             android:layout_width="match_parent"
             android:layout_height="1dp"
@@ -32,53 +48,109 @@
             android:layout_marginBottom="20dp"
             android:background="#cccccc" />
 
+        <Button
+            android:id="@+id/activateAdminButton"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Activate Admin"
+            android:textAllCaps="false"
+            android:layout_marginBottom="12dp" />
+
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:layout_marginTop="12dp"
+            android:layout_marginBottom="20dp"
+            android:background="#cccccc" />
+
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="DEVICE MANAGEMENT"
-            android:textSize="22sp"
+            android:text="FACTORY RESET CONTROLS"
+            android:textSize="16sp"
             android:textStyle="bold"
-            android:layout_marginBottom="16dp" />
+            android:layout_marginBottom="12dp" />
+
+        <Button
+            android:id="@+id/factoryResetButton"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Perform Factory Reset"
+            android:textAllCaps="false"
+            android:layout_marginBottom="12dp" />
 
         <Switch
-            android:id="@+id/blockFactoryResetSwitch"
+            android:id="@+id/factoryResetSwitch"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:text="Block Factory Reset"
-            android:layout_marginBottom="12dp" />
-
-        <Switch
-            android:id="@+id/blockNetworkResetSwitch"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="Block Network Reset"
-            android:layout_marginBottom="12dp" />
-
-        <Switch
-            android:id="@+id/blockWifiConfigSwitch"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="Block Wi-Fi Configuration"
-            android:layout_marginBottom="12dp" />
-
-        <Switch
-            android:id="@+id/blockBluetoothConfigSwitch"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="Block Bluetooth Configuration"
-            android:layout_marginBottom="12dp" />
-
-        <Switch
-            android:id="@+id/blockPrivateDnsSwitch"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="Block Private DNS"
             android:layout_marginBottom="20dp" />
 
         <View
             android:layout_width="match_parent"
             android:layout_height="1dp"
-            android:layout_marginTop="20dp"
+            android:layout_marginTop="12dp"
+            android:layout_marginBottom="20dp"
+            android:background="#cccccc" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="NETWORK CONTROLS"
+            android:textSize="16sp"
+            android:textStyle="bold"
+            android:layout_marginBottom="12dp" />
+
+        <Button
+            android:id="@+id/networkResetButton"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Reset Network Settings"
+            android:textAllCaps="false"
+            android:layout_marginBottom="12dp" />
+
+        <Switch
+            android:id="@+id/networkResetSwitch"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Block Network Reset"
+            android:layout_marginBottom="20dp" />
+
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:layout_marginTop="12dp"
+            android:layout_marginBottom="20dp"
+            android:background="#cccccc" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="DNS CONFIGURATION"
+            android:textSize="16sp"
+            android:textStyle="bold"
+            android:layout_marginBottom="12dp" />
+
+        <EditText
+            android:id="@+id/dnsHostEditText"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="Enter DNS host"
+            android:inputType="text"
+            android:layout_marginBottom="12dp" />
+
+        <Button
+            android:id="@+id/dnsApplyButton"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Apply DNS Configuration"
+            android:textAllCaps="false"
+            android:layout_marginBottom="20dp" />
+
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:layout_marginTop="12dp"
             android:layout_marginBottom="20dp"
             android:background="#cccccc" />
 
