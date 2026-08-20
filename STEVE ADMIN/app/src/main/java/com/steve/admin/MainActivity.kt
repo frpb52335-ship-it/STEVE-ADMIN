@@ -104,18 +104,7 @@ class MainActivity : AppCompatActivity() {
         }
 
         dnsApplyButton.setOnClickListener {
-            val host = dnsHostEditText.text.toString().trim()
-            if (host.isEmpty()) {
-                Toast.makeText(this, "Please enter a DNS hostname.", Toast.LENGTH_SHORT).show()
-                return@setOnClickListener
-            }
-
-            if (!isValidHostname(host)) {
-                Toast.makeText(this, "Invalid hostname.", Toast.LENGTH_SHORT).show()
-                return@setOnClickListener
-            }
-
-            applyDnsHostname(host)
+            Toast.makeText(this, "DNS configuration is disabled.", Toast.LENGTH_SHORT).show()
         }
 
         removeAdminButton.setOnClickListener {
@@ -136,6 +125,9 @@ class MainActivity : AppCompatActivity() {
                 statusText.text = "Device Owner removed. You can uninstall STEVE ADMIN."
 
                 Toast.makeText(this, "Device Owner removed", Toast.LENGTH_LONG).show()
+                
+                // Refresh UI after removal
+                updateAdminStatus()
             } catch (se: SecurityException) {
                 Log.e(TAG, "Could not remove Device Owner: ${se.message}")
                 Toast.makeText(this, "Could not remove Device Owner: ${se.message}", Toast.LENGTH_LONG).show()
@@ -151,12 +143,16 @@ class MainActivity : AppCompatActivity() {
             val isOwner = dpm.isDeviceOwnerApp(packageName)
             if (isOwner) {
                 ownerStatus.text = "Administrator Active"
-                // enable controls
+                // enable device management controls
                 factoryResetButton.isEnabled = true
                 networkResetButton.isEnabled = true
-                dnsApplyButton.isEnabled = true
                 activateAdminButton.isEnabled = false
                 removeAdminButton.isEnabled = true
+                
+                // DISABLE DNS configuration - not allowed
+                dnsApplyButton.isEnabled = false
+                dnsHostEditText.isEnabled = false
+                dnsStatus.text = "DNS: Disabled"
 
                 loadFactoryResetState()
                 updateStatusText()
@@ -164,9 +160,13 @@ class MainActivity : AppCompatActivity() {
                 ownerStatus.text = "Administrator Not Active"
                 factoryResetButton.isEnabled = false
                 networkResetButton.isEnabled = false
-                dnsApplyButton.isEnabled = false
                 activateAdminButton.isEnabled = true
                 removeAdminButton.isEnabled = false
+                
+                // DNS configuration always disabled
+                dnsApplyButton.isEnabled = false
+                dnsHostEditText.isEnabled = false
+                dnsStatus.text = "DNS: Disabled"
 
                 statusText.text = "Set STEVE ADMIN as Device Owner first."
             }
@@ -228,33 +228,6 @@ class MainActivity : AppCompatActivity() {
             .show()
     }
 
-    private fun applyDnsHostname(host: String) {
-        // Apps cannot change global/private DNS settings without privileged permissions (WRITE_SECURE_SETTINGS)
-        // so explain that clearly.
-        if (!dpm.isDeviceOwnerApp(packageName)) {
-            Toast.makeText(this, "DNS change failed: Not device owner.", Toast.LENGTH_LONG).show()
-            return
-        }
-
-        val reason = "Changing the system Private DNS/Global DNS requires system-level permissions (WRITE_SECURE_SETTINGS) " +
-                "or use of a Device Policy controller with appropriate OEM support. This app cannot change system DNS on standard Android builds."
-
-        Log.e(TAG, "DNS change not permitted: $reason")
-        AlertDialog.Builder(this)
-            .setTitle("DNS change not permitted")
-            .setMessage("DNS change failed: $reason")
-            .setPositiveButton("Open Private DNS settings") { _, _ ->
-                try {
-                    startActivity(Intent("android.settings.PRIVATE_DNS_SETTINGS"))
-                } catch (e: Exception) {
-                    Log.e(TAG, "Could not open Private DNS settings: ${e.message}")
-                    Toast.makeText(this, "Could not open Private DNS settings: ${e.message}", Toast.LENGTH_LONG).show()
-                }
-            }
-            .setNegativeButton("OK", null)
-            .show()
-    }
-
     private fun isValidHostname(host: String): Boolean {
         // Basic hostname validation (RFC 1035-ish). Allow letters, digits, hyphens and dots.
         val regex = "^[A-Za-z0-9](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?(?:\\.[A-Za-z]{2,})+$".toRegex()
@@ -276,7 +249,7 @@ class MainActivity : AppCompatActivity() {
         try {
             val factory = if (dpm.getUserRestrictions(admin).getBoolean(UserManager.DISALLOW_FACTORY_RESET, false)) "BLOCKED" else "ALLOWED"
             val network = "UNKNOWN"
-            val dns = "UNKNOWN"
+            val dns = "DISABLED"
 
             statusText.text = "Factory reset: $factory\nNetwork reset: $network\nDNS: $dns"
         } catch (e: Exception) {
