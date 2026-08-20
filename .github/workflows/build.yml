@@ -13,35 +13,39 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Set up Java 17
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v5
         with:
           distribution: temurin
           java-version: "17"
 
-      - name: Set up Gradle 8.2
-        uses: gradle/actions/setup-gradle@v4
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v5
         with:
           gradle-version: "8.2"
 
-      - name: Check project structure
+      - name: Check project files
         run: |
-          echo "Repository root:"
+          echo "Repository:"
           pwd
           echo
-          echo "Root files:"
+          echo "Root:"
           ls -la
           echo
-          echo "STEVE ADMIN files:"
+          echo "STEVE ADMIN:"
           ls -la "STEVE ADMIN"
+          echo
+          echo "APP:"
+          ls -la "STEVE ADMIN/app"
 
-      - name: Check required Gradle files
+      - name: Check required files
         run: |
-          test -f "STEVE ADMIN/settings.gradle.kts" && echo "settings.gradle.kts OK"
-          test -f "STEVE ADMIN/build.gradle.kts" && echo "root build.gradle.kts OK"
-          test -f "STEVE ADMIN/app/build.gradle.kts" && echo "app/build.gradle.kts OK"
+          test -f "STEVE ADMIN/settings.gradle.kts"
+          test -f "STEVE ADMIN/build.gradle.kts"
+          test -f "STEVE ADMIN/app/build.gradle.kts"
+          echo "All Gradle files found."
 
       - name: Check Gradle
         run: gradle --version
@@ -49,13 +53,12 @@ jobs:
       - name: Build debug APK
         working-directory: "STEVE ADMIN"
         run: |
-          gradle :app:assembleDebug --no-daemon --stacktrace --info
+          gradle :app:assembleDebug --no-daemon --stacktrace
 
-      - name: Show generated APK
+      - name: Find APK
         if: success()
         run: |
-          echo "Generated APK files:"
-          find "STEVE ADMIN/app/build/outputs" -type f -name "*.apk" -print
+          find "STEVE ADMIN/app/build" -type f -name "*.apk" -print
 
       - name: Upload debug APK
         if: success()
