@@ -64,12 +64,26 @@
             android:textAllCaps="false"
             android:layout_marginBottom="12dp" />
 
+        <Switch
+            android:id="@+id/factoryResetSwitch"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Block Factory Reset"
+            android:layout_marginBottom="12dp" />
+
         <Button
             android:id="@+id/networkResetButton"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:text="Network Reset"
             android:textAllCaps="false"
+            android:layout_marginBottom="12dp" />
+
+        <Switch
+            android:id="@+id/networkResetSwitch"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Block Network Reset"
             android:layout_marginBottom="12dp" />
 
         <View
