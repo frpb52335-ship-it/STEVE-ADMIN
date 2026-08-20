@@ -6,11 +6,24 @@ import android.content.Intent
 import android.widget.Toast
 
 class AdminReceiver : DeviceAdminReceiver() {
+
     override fun onEnabled(context: Context, intent: Intent) {
-        Toast.makeText(context, "STEVE ADMIN Enabled", Toast.LENGTH_SHORT).show()
+        super.onEnabled(context, intent)
+
+        Toast.makeText(
+            context,
+            "STEVE ADMIN enabled",
+            Toast.LENGTH_SHORT
+        ).show()
     }
 
     override fun onDisabled(context: Context, intent: Intent) {
-        Toast.makeText(context, "STEVE ADMIN Disabled", Toast.LENGTH_SHORT).show()
+        super.onDisabled(context, intent)
+
+        Toast.makeText(
+            context,
+            "STEVE ADMIN disabled",
+            Toast.LENGTH_SHORT
+        ).show()
     }
 }
