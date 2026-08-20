@@ -10,6 +10,7 @@ import android.provider.Settings
 import android.util.Log
 import android.widget.Button
 import android.widget.EditText
+import android.widget.Switch
 import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
@@ -29,6 +30,9 @@ class MainActivity : AppCompatActivity() {
     private lateinit var activateAdminButton: Button
     private lateinit var dnsHostEditText: EditText
     private lateinit var removeAdminButton: Button
+    
+    private lateinit var factoryResetSwitch: Switch
+    private lateinit var networkResetSwitch: Switch
 
     companion object {
         private const val TAG = "STEVE-ADMIN"
@@ -56,6 +60,9 @@ class MainActivity : AppCompatActivity() {
         activateAdminButton = findViewById(R.id.activateAdminButton)
         dnsHostEditText = findViewById(R.id.dnsHostEditText)
         removeAdminButton = findViewById(R.id.removeAdminButton)
+        
+        factoryResetSwitch = findViewById(R.id.factoryResetSwitch)
+        networkResetSwitch = findViewById(R.id.networkResetSwitch)
 
         setupClickListeners()
     }
@@ -64,6 +71,10 @@ class MainActivity : AppCompatActivity() {
         super.onResume()
         // Refresh UI status when returning to app
         updateAdminStatus()
+    }
+
+    private fun isAdminActive(): Boolean {
+        return dpm.isAdminActive(admin)
     }
 
     private fun setupClickListeners() {
@@ -88,7 +99,7 @@ class MainActivity : AppCompatActivity() {
         }
 
         factoryResetButton.setOnClickListener {
-            if (!dpm.isDeviceOwnerApp(packageName)) {
+            if (!isAdminActive()) {
                 Toast.makeText(this, "Admin not active. Please activate first.", Toast.LENGTH_SHORT).show()
                 return@setOnClickListener
             }
@@ -102,8 +113,40 @@ class MainActivity : AppCompatActivity() {
                 .show()
         }
 
+        factoryResetSwitch.setOnCheckedChangeListener { _, isChecked ->
+            if (!isAdminActive()) {
+                factoryResetSwitch.isChecked = false
+                Toast.makeText(this, "Admin not active. Please activate first.", Toast.LENGTH_SHORT).show()
+                return@setOnCheckedChangeListener
+            }
+            
+            if (isChecked) {
+                AlertDialog.Builder(this)
+                    .setTitle("Block Factory Reset")
+                    .setMessage("Prevent users from factory resetting this device?")
+                    .setNegativeButton("Cancel") { _, _ ->
+                        factoryResetSwitch.isChecked = false
+                    }
+                    .setPositiveButton("Block") { _, _ ->
+                        blockFactoryReset()
+                    }
+                    .show()
+            } else {
+                AlertDialog.Builder(this)
+                    .setTitle("Allow Factory Reset")
+                    .setMessage("Allow users to factory reset this device?")
+                    .setNegativeButton("Cancel") { _, _ ->
+                        factoryResetSwitch.isChecked = true
+                    }
+                    .setPositiveButton("Allow") { _, _ ->
+                        allowFactoryReset()
+                    }
+                    .show()
+            }
+        }
+
         networkResetButton.setOnClickListener {
-            if (!dpm.isDeviceOwnerApp(packageName)) {
+            if (!isAdminActive()) {
                 Toast.makeText(this, "Admin not active. Please activate first.", Toast.LENGTH_SHORT).show()
                 return@setOnClickListener
             }
@@ -117,32 +160,61 @@ class MainActivity : AppCompatActivity() {
                 .show()
         }
 
+        networkResetSwitch.setOnCheckedChangeListener { _, isChecked ->
+            if (!isAdminActive()) {
+                networkResetSwitch.isChecked = false
+                Toast.makeText(this, "Admin not active. Please activate first.", Toast.LENGTH_SHORT).show()
+                return@setOnCheckedChangeListener
+            }
+            
+            if (isChecked) {
+                AlertDialog.Builder(this)
+                    .setTitle("Block Network Reset")
+                    .setMessage("Prevent users from resetting network settings?")
+                    .setNegativeButton("Cancel") { _, _ ->
+                        networkResetSwitch.isChecked = false
+                    }
+                    .setPositiveButton("Block") { _, _ ->
+                        Toast.makeText(this, "Network reset restricted", Toast.LENGTH_SHORT).show()
+                    }
+                    .show()
+            } else {
+                AlertDialog.Builder(this)
+                    .setTitle("Allow Network Reset")
+                    .setMessage("Allow users to reset network settings?")
+                    .setNegativeButton("Cancel") { _, _ ->
+                        networkResetSwitch.isChecked = true
+                    }
+                    .setPositiveButton("Allow") { _, _ ->
+                        Toast.makeText(this, "Network reset allowed", Toast.LENGTH_SHORT).show()
+                    }
+                    .show()
+            }
+        }
+
         dnsApplyButton.setOnClickListener {
             Toast.makeText(this, "DNS configuration is disabled.", Toast.LENGTH_SHORT).show()
         }
 
         removeAdminButton.setOnClickListener {
-            if (!dpm.isDeviceOwnerApp(packageName)) {
+            if (!isAdminActive()) {
                 Toast.makeText(this, "Admin not active.", Toast.LENGTH_SHORT).show()
                 return@setOnClickListener
             }
 
             AlertDialog.Builder(this)
                 .setTitle("Remove Admin")
-                .setMessage("Remove Device Owner status? The device will no longer be managed.")
+                .setMessage("Remove Device Admin status? The device will no longer be managed.")
                 .setNegativeButton("Cancel", null)
                 .setPositiveButton("Remove") { _, _ ->
                     try {
-                        dpm.clearUserRestriction(admin, UserManager.DISALLOW_FACTORY_RESET)
-                        @Suppress("DEPRECATION")
-                        dpm.clearDeviceOwnerApp(packageName)
-
+                        dpm.removeActiveAdmin(admin)
                         ownerStatus.text = "Administrator REMOVED"
-                        statusText.text = "Device Owner removed."
+                        statusText.text = "Device Admin removed."
                         Toast.makeText(this, "Admin removed successfully", Toast.LENGTH_LONG).show()
                         updateAdminStatus()
                     } catch (se: SecurityException) {
-                        Log.e(TAG, "Could not remove Device Owner: ${se.message}")
+                        Log.e(TAG, "Could not remove admin: ${se.message}")
                         Toast.makeText(this, "Failed: ${se.message}", Toast.LENGTH_LONG).show()
                     } catch (e: Exception) {
                         Log.e(TAG, "Error: ${e.message}")
@@ -155,13 +227,15 @@ class MainActivity : AppCompatActivity() {
 
     private fun updateAdminStatus() {
         try {
-            val isOwner = dpm.isDeviceOwnerApp(packageName)
-            if (isOwner) {
+            val isAdmin = isAdminActive()
+            if (isAdmin) {
                 ownerStatus.text = "✓ Administrator Active"
                 
                 // Enable admin features
                 factoryResetButton.isEnabled = true
                 networkResetButton.isEnabled = true
+                factoryResetSwitch.isEnabled = true
+                networkResetSwitch.isEnabled = true
                 activateAdminButton.isEnabled = false
                 removeAdminButton.isEnabled = true
                 
@@ -171,12 +245,17 @@ class MainActivity : AppCompatActivity() {
                 dnsStatus.text = "DNS: Disabled"
 
                 loadFactoryResetState()
+                statusText.text = "Device Admin is active"
             } else {
                 ownerStatus.text = "✗ Administrator Not Active"
                 
                 // Buttons enabled but will show message when clicked
                 factoryResetButton.isEnabled = true
                 networkResetButton.isEnabled = true
+                factoryResetSwitch.isEnabled = false
+                networkResetSwitch.isEnabled = false
+                factoryResetSwitch.isChecked = false
+                networkResetSwitch.isChecked = false
                 activateAdminButton.isEnabled = true
                 removeAdminButton.isEnabled = false
                 
@@ -190,6 +269,30 @@ class MainActivity : AppCompatActivity() {
         } catch (e: Exception) {
             Log.e(TAG, "Error checking admin status: ${e.message}")
             ownerStatus.text = "Error checking status"
+        }
+    }
+
+    private fun blockFactoryReset() {
+        try {
+            dpm.addUserRestriction(admin, UserManager.DISALLOW_FACTORY_RESET)
+            Toast.makeText(this, "Factory reset blocked", Toast.LENGTH_SHORT).show()
+            Log.i(TAG, "Factory reset blocked")
+        } catch (se: SecurityException) {
+            Log.e(TAG, "Failed to block factory reset: ${se.message}")
+            Toast.makeText(this, "Failed: ${se.message}", Toast.LENGTH_SHORT).show()
+            factoryResetSwitch.isChecked = false
+        }
+    }
+
+    private fun allowFactoryReset() {
+        try {
+            dpm.clearUserRestriction(admin, UserManager.DISALLOW_FACTORY_RESET)
+            Toast.makeText(this, "Factory reset allowed", Toast.LENGTH_SHORT).show()
+            Log.i(TAG, "Factory reset allowed")
+        } catch (se: SecurityException) {
+            Log.e(TAG, "Failed to allow factory reset: ${se.message}")
+            Toast.makeText(this, "Failed: ${se.message}", Toast.LENGTH_SHORT).show()
+            factoryResetSwitch.isChecked = true
         }
     }
 
@@ -220,6 +323,7 @@ class MainActivity : AppCompatActivity() {
         try {
             val restrictions = dpm.getUserRestrictions(admin)
             val blocked = restrictions.getBoolean(UserManager.DISALLOW_FACTORY_RESET, false)
+            factoryResetSwitch.isChecked = blocked
             statusText.text = if (blocked) "Factory reset: BLOCKED" else "Factory reset: ALLOWED"
         } catch (e: Exception) {
             Log.e(TAG, "Error loading factory reset state: ${e.message}")
