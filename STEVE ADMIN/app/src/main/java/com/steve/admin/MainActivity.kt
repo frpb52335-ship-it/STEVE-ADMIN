@@ -188,7 +188,7 @@ class MainActivity : AppCompatActivity() {
             dpm.wipeData(0)
             // If the call returns, we show a message; in most cases the device will reboot before next lines run.
             Toast.makeText(this, "Factory reset request completed.", Toast.LENGTH_LONG).show()
-            Log.i(TAG, "wipeData() called");
+            Log.i(TAG, "wipeData() called")
         } catch (se: SecurityException) {
             Log.e(TAG, "Factory reset not permitted: ${se.message}")
             Toast.makeText(this, "Factory reset failed: ${se.message}", Toast.LENGTH_LONG).show()
@@ -210,7 +210,7 @@ class MainActivity : AppCompatActivity() {
         // Many Android versions do not expose a programmatic way to reset network settings
         // for third-party apps. Explain this clearly.
         val reason = "Android does not provide a public API for apps to perform a full network reset. " +
-                "This operation typically requires system-level privileges or a manual user action.")
+                "This operation typically requires system-level privileges or a manual user action."
 
         Log.e(TAG, "Network reset not permitted: $reason")
         AlertDialog.Builder(this)
@@ -245,7 +245,7 @@ class MainActivity : AppCompatActivity() {
             .setMessage("DNS change failed: $reason")
             .setPositiveButton("Open Private DNS settings") { _, _ ->
                 try {
-                    startActivity(Intent(Settings.ACTION_PRIVATE_DNS_SETTINGS))
+                    startActivity(Intent("android.settings.PRIVATE_DNS_SETTINGS"))
                 } catch (e: Exception) {
                     Log.e(TAG, "Could not open Private DNS settings: ${e.message}")
                     Toast.makeText(this, "Could not open Private DNS settings: ${e.message}", Toast.LENGTH_LONG).show()
