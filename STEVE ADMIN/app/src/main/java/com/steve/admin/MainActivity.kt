@@ -57,10 +57,17 @@ class MainActivity : AppCompatActivity() {
         dnsHostEditText = findViewById(R.id.dnsHostEditText)
         removeAdminButton = findViewById(R.id.removeAdminButton)
 
-        updateAdminStatus()
+        setupClickListeners()
+    }
 
+    override fun onResume() {
+        super.onResume()
+        // Refresh UI status when returning to app
+        updateAdminStatus()
+    }
+
+    private fun setupClickListeners() {
         activateAdminButton.setOnClickListener {
-            // Open Android's device admin activation screen for our receiver
             try {
                 val intent = Intent(DevicePolicyManager.ACTION_ADD_DEVICE_ADMIN).apply {
                     putExtra(DevicePolicyManager.EXTRA_DEVICE_ADMIN, admin)
@@ -81,10 +88,13 @@ class MainActivity : AppCompatActivity() {
         }
 
         factoryResetButton.setOnClickListener {
-            // Confirmation dialog first
+            if (!dpm.isDeviceOwnerApp(packageName)) {
+                Toast.makeText(this, "Admin not active. Please activate first.", Toast.LENGTH_SHORT).show()
+                return@setOnClickListener
+            }
             AlertDialog.Builder(this)
-                .setTitle("Factory reset")
-                .setMessage("This will erase the device. Continue?")
+                .setTitle("Factory Reset")
+                .setMessage("This will erase all data on the device. Continue?")
                 .setNegativeButton("Cancel", null)
                 .setPositiveButton("Continue") { _, _ ->
                     performFactoryReset()
@@ -93,9 +103,13 @@ class MainActivity : AppCompatActivity() {
         }
 
         networkResetButton.setOnClickListener {
+            if (!dpm.isDeviceOwnerApp(packageName)) {
+                Toast.makeText(this, "Admin not active. Please activate first.", Toast.LENGTH_SHORT).show()
+                return@setOnClickListener
+            }
             AlertDialog.Builder(this)
-                .setTitle("Network reset")
-                .setMessage("This will attempt to reset network settings. Continue?")
+                .setTitle("Network Reset")
+                .setMessage("Reset network settings?")
                 .setNegativeButton("Cancel", null)
                 .setPositiveButton("Continue") { _, _ ->
                     performNetworkReset()
@@ -109,32 +123,33 @@ class MainActivity : AppCompatActivity() {
 
         removeAdminButton.setOnClickListener {
             if (!dpm.isDeviceOwnerApp(packageName)) {
-                Toast.makeText(this, "STEVE ADMIN is not Device Owner.", Toast.LENGTH_SHORT).show()
+                Toast.makeText(this, "Admin not active.", Toast.LENGTH_SHORT).show()
                 return@setOnClickListener
             }
 
-            try {
-                // Remove the factory-reset restriction first.
-                dpm.clearUserRestriction(admin, UserManager.DISALLOW_FACTORY_RESET)
+            AlertDialog.Builder(this)
+                .setTitle("Remove Admin")
+                .setMessage("Remove Device Owner status? The device will no longer be managed.")
+                .setNegativeButton("Cancel", null)
+                .setPositiveButton("Remove") { _, _ ->
+                    try {
+                        dpm.clearUserRestriction(admin, UserManager.DISALLOW_FACTORY_RESET)
+                        @Suppress("DEPRECATION")
+                        dpm.clearDeviceOwnerApp(packageName)
 
-                @Suppress("DEPRECATION")
-                dpm.clearDeviceOwnerApp(packageName)
-
-                ownerStatus.text = "Administrator REMOVED"
-
-                statusText.text = "Device Owner removed. You can uninstall STEVE ADMIN."
-
-                Toast.makeText(this, "Device Owner removed", Toast.LENGTH_LONG).show()
-                
-                // Refresh UI after removal
-                updateAdminStatus()
-            } catch (se: SecurityException) {
-                Log.e(TAG, "Could not remove Device Owner: ${se.message}")
-                Toast.makeText(this, "Could not remove Device Owner: ${se.message}", Toast.LENGTH_LONG).show()
-            } catch (e: Exception) {
-                Log.e(TAG, "Unexpected error clearing owner: ${e.message}")
-                Toast.makeText(this, "Unexpected error: ${e.message}", Toast.LENGTH_LONG).show()
-            }
+                        ownerStatus.text = "Administrator REMOVED"
+                        statusText.text = "Device Owner removed."
+                        Toast.makeText(this, "Admin removed successfully", Toast.LENGTH_LONG).show()
+                        updateAdminStatus()
+                    } catch (se: SecurityException) {
+                        Log.e(TAG, "Could not remove Device Owner: ${se.message}")
+                        Toast.makeText(this, "Failed: ${se.message}", Toast.LENGTH_LONG).show()
+                    } catch (e: Exception) {
+                        Log.e(TAG, "Error: ${e.message}")
+                        Toast.makeText(this, "Error: ${e.message}", Toast.LENGTH_LONG).show()
+                    }
+                }
+                .show()
         }
     }
 
@@ -142,96 +157,63 @@ class MainActivity : AppCompatActivity() {
         try {
             val isOwner = dpm.isDeviceOwnerApp(packageName)
             if (isOwner) {
-                ownerStatus.text = "Administrator Active"
-                // enable device management controls
+                ownerStatus.text = "✓ Administrator Active"
+                
+                // Enable admin features
                 factoryResetButton.isEnabled = true
                 networkResetButton.isEnabled = true
                 activateAdminButton.isEnabled = false
                 removeAdminButton.isEnabled = true
                 
-                // DISABLE DNS configuration - not allowed
+                // Disable DNS
                 dnsApplyButton.isEnabled = false
                 dnsHostEditText.isEnabled = false
                 dnsStatus.text = "DNS: Disabled"
 
                 loadFactoryResetState()
-                updateStatusText()
             } else {
-                ownerStatus.text = "Administrator Not Active"
-                factoryResetButton.isEnabled = false
-                networkResetButton.isEnabled = false
+                ownerStatus.text = "✗ Administrator Not Active"
+                
+                // Buttons enabled but will show message when clicked
+                factoryResetButton.isEnabled = true
+                networkResetButton.isEnabled = true
                 activateAdminButton.isEnabled = true
                 removeAdminButton.isEnabled = false
                 
-                // DNS configuration always disabled
+                // Disable DNS
                 dnsApplyButton.isEnabled = false
                 dnsHostEditText.isEnabled = false
                 dnsStatus.text = "DNS: Disabled"
 
-                statusText.text = "Set STEVE ADMIN as Device Owner first."
+                statusText.text = "Tap 'Activate Admin' to enable features."
             }
         } catch (e: Exception) {
             Log.e(TAG, "Error checking admin status: ${e.message}")
-            ownerStatus.text = "Administrator Not Active"
-            Toast.makeText(this, "Error checking admin status: ${e.message}", Toast.LENGTH_LONG).show()
+            ownerStatus.text = "Error checking status"
         }
     }
 
     private fun performFactoryReset() {
-        if (!dpm.isDeviceOwnerApp(packageName)) {
-            Toast.makeText(this, "Factory reset is not permitted with the current administrator privileges.", Toast.LENGTH_LONG).show()
-            return
-        }
-
         try {
-            // Attempt factory reset using official API. This requires device owner privileges.
             dpm.wipeData(0)
-            // If the call returns, we show a message; in most cases the device will reboot before next lines run.
-            Toast.makeText(this, "Factory reset request completed.", Toast.LENGTH_LONG).show()
-            Log.i(TAG, "wipeData() called")
+            Toast.makeText(this, "Factory reset initiated...", Toast.LENGTH_LONG).show()
+            Log.i(TAG, "Factory reset called")
         } catch (se: SecurityException) {
-            Log.e(TAG, "Factory reset not permitted: ${se.message}")
-            Toast.makeText(this, "Factory reset failed: ${se.message}", Toast.LENGTH_LONG).show()
+            Log.e(TAG, "Factory reset failed: ${se.message}")
+            Toast.makeText(this, "Failed: ${se.message}", Toast.LENGTH_LONG).show()
         } catch (e: Exception) {
-            Log.e(TAG, "Factory reset error: ${e.message}")
-            Toast.makeText(this, "Factory reset failed: ${e.message}", Toast.LENGTH_LONG).show()
+            Log.e(TAG, "Error: ${e.message}")
+            Toast.makeText(this, "Error: ${e.message}", Toast.LENGTH_LONG).show()
         }
     }
 
     private fun performNetworkReset() {
-        // There is no official public DevicePolicyManager API to perform a full "network reset"
-        // from a normal device-owner app on standard Android builds. Perform best-effort checks
-        // and report exact reason.
-        if (!dpm.isDeviceOwnerApp(packageName)) {
-            Toast.makeText(this, "Network reset failed: Not device owner.", Toast.LENGTH_LONG).show()
-            return
+        try {
+            startActivity(Intent(Settings.ACTION_WIRELESS_SETTINGS))
+        } catch (e: Exception) {
+            Log.e(TAG, "Could not open network settings: ${e.message}")
+            Toast.makeText(this, "Error: ${e.message}", Toast.LENGTH_LONG).show()
         }
-
-        // Many Android versions do not expose a programmatic way to reset network settings
-        // for third-party apps. Explain this clearly.
-        val reason = "Android does not provide a public API for apps to perform a full network reset. " +
-                "This operation typically requires system-level privileges or a manual user action."
-
-        Log.e(TAG, "Network reset not permitted: $reason")
-        AlertDialog.Builder(this)
-            .setTitle("Network reset not permitted")
-            .setMessage("Network reset failed: $reason")
-            .setPositiveButton("Open network settings") { _, _ ->
-                try {
-                    startActivity(Intent(Settings.ACTION_WIRELESS_SETTINGS))
-                } catch (e: Exception) {
-                    Log.e(TAG, "Could not open network settings: ${e.message}")
-                    Toast.makeText(this, "Could not open network settings: ${e.message}", Toast.LENGTH_LONG).show()
-                }
-            }
-            .setNegativeButton("OK", null)
-            .show()
-    }
-
-    private fun isValidHostname(host: String): Boolean {
-        // Basic hostname validation (RFC 1035-ish). Allow letters, digits, hyphens and dots.
-        val regex = "^[A-Za-z0-9](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?(?:\\.[A-Za-z]{2,})+$".toRegex()
-        return regex.matches(host)
     }
 
     private fun loadFactoryResetState() {
@@ -241,19 +223,6 @@ class MainActivity : AppCompatActivity() {
             statusText.text = if (blocked) "Factory reset: BLOCKED" else "Factory reset: ALLOWED"
         } catch (e: Exception) {
             Log.e(TAG, "Error loading factory reset state: ${e.message}")
-        }
-    }
-
-    private fun updateStatusText() {
-        // Update a more detailed status area
-        try {
-            val factory = if (dpm.getUserRestrictions(admin).getBoolean(UserManager.DISALLOW_FACTORY_RESET, false)) "BLOCKED" else "ALLOWED"
-            val network = "UNKNOWN"
-            val dns = "DISABLED"
-
-            statusText.text = "Factory reset: $factory\nNetwork reset: $network\nDNS: $dns"
-        } catch (e: Exception) {
-            Log.e(TAG, "Error updating status text: ${e.message}")
         }
     }
 }
