@@ -26,30 +26,36 @@ jobs:
         with:
           gradle-version: "8.2"
 
-      - name: Show project files
-        working-directory: "STEVE ADMIN"
+      - name: Check project structure
         run: |
-          echo "Current directory:"
+          echo "Repository root:"
           pwd
-          echo "Project files:"
-          find . -maxdepth 3 -type f | sort
+          echo
+          echo "Root files:"
+          ls -la
+          echo
+          echo "STEVE ADMIN files:"
+          ls -la "STEVE ADMIN"
+
+      - name: Check required Gradle files
+        run: |
+          test -f "STEVE ADMIN/settings.gradle.kts" && echo "settings.gradle.kts OK"
+          test -f "STEVE ADMIN/build.gradle.kts" && echo "root build.gradle.kts OK"
+          test -f "STEVE ADMIN/app/build.gradle.kts" && echo "app/build.gradle.kts OK"
 
       - name: Check Gradle
-        working-directory: "STEVE ADMIN"
-        run: |
-          gradle --version
+        run: gradle --version
 
       - name: Build debug APK
         working-directory: "STEVE ADMIN"
         run: |
-          gradle assembleDebug --no-daemon --stacktrace --info
+          gradle :app:assembleDebug --no-daemon --stacktrace --info
 
       - name: Show generated APK
         if: success()
-        working-directory: "STEVE ADMIN"
         run: |
           echo "Generated APK files:"
-          find app/build/outputs -type f -name "*.apk" -print
+          find "STEVE ADMIN/app/build/outputs" -type f -name "*.apk" -print
 
       - name: Upload debug APK
         if: success()
