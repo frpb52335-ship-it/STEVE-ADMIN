@@ -21,17 +21,17 @@ jobs:
           distribution: temurin
           java-version: "17"
 
-      - name: Set up Gradle
+      - name: Set up Gradle 8.2
         uses: gradle/actions/setup-gradle@v5
         with:
           gradle-version: "8.2"
 
-      - name: Check project files
+      - name: Check project structure
         run: |
-          echo "Repository:"
+          echo "Repository root:"
           pwd
           echo
-          echo "Root:"
+          echo "Root files:"
           ls -la
           echo
           echo "STEVE ADMIN:"
@@ -42,23 +42,64 @@ jobs:
 
       - name: Check required files
         run: |
-          test -f "STEVE ADMIN/settings.gradle.kts"
-          test -f "STEVE ADMIN/build.gradle.kts"
-          test -f "STEVE ADMIN/app/build.gradle.kts"
-          echo "All Gradle files found."
+          echo "Checking Gradle files..."
 
-      - name: Check Gradle
-        run: gradle --version
+          test -f "STEVE ADMIN/settings.gradle.kts"
+          echo "OK: settings.gradle.kts"
+
+          test -f "STEVE ADMIN/build.gradle.kts"
+          echo "OK: root build.gradle.kts"
+
+          test -f "STEVE ADMIN/app/build.gradle.kts"
+          echo "OK: app/build.gradle.kts"
+
+          echo "All required Gradle files found."
+
+      - name: Check Gradle version
+        run: |
+          gradle --version
 
       - name: Build debug APK
         working-directory: "STEVE ADMIN"
         run: |
-          gradle :app:assembleDebug --no-daemon --stacktrace
+          set +e
 
-      - name: Find APK
+          gradle :app:assembleDebug \
+            --no-daemon \
+            --stacktrace \
+            --console=plain \
+            2>&1 | tee build.log
+
+          BUILD_EXIT=${PIPESTATUS[0]}
+
+          echo ""
+          echo "========================================"
+          echo "GRADLE BUILD EXIT CODE: $BUILD_EXIT"
+          echo "========================================"
+
+          if [ "$BUILD_EXIT" -ne 0 ]; then
+            echo ""
+            echo "========== IMPORTANT BUILD ERRORS =========="
+
+            grep -n -E \
+              -B 5 -A 15 \
+              "What went wrong|Execution failed|error:|e: |FAILURE:" \
+              build.log || true
+
+            echo ""
+            echo "========== END BUILD ERRORS =========="
+
+            exit "$BUILD_EXIT"
+          fi
+
+      - name: Find generated APK
         if: success()
         run: |
-          find "STEVE ADMIN/app/build" -type f -name "*.apk" -print
+          echo "Searching for APK..."
+          find "STEVE ADMIN/app/build" \
+            -type f \
+            -name "*.apk" \
+            -print
 
       - name: Upload debug APK
         if: success()
