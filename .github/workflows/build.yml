@@ -31,78 +31,50 @@ jobs:
           echo "Repository root:"
           pwd
           echo
-          echo "Root files:"
-          ls -la
-          echo
-          echo "STEVE ADMIN:"
-          ls -la "STEVE ADMIN"
-          echo
-          echo "APP:"
-          ls -la "STEVE ADMIN/app"
+          find . -maxdepth 4 -type f | sort
 
       - name: Check required files
         run: |
-          echo "Checking Gradle files..."
-
           test -f "STEVE ADMIN/settings.gradle.kts"
-          echo "OK: settings.gradle.kts"
-
           test -f "STEVE ADMIN/build.gradle.kts"
-          echo "OK: root build.gradle.kts"
-
           test -f "STEVE ADMIN/app/build.gradle.kts"
-          echo "OK: app/build.gradle.kts"
-
           echo "All required Gradle files found."
 
-      - name: Check Gradle version
-        run: |
-          gradle --version
-
       - name: Build debug APK
+        id: build
         working-directory: "STEVE ADMIN"
+        continue-on-error: true
         run: |
-          set +e
-
           gradle :app:assembleDebug \
             --no-daemon \
             --stacktrace \
             --console=plain \
-            2>&1 | tee build.log
+            > build.log 2>&1
 
-          BUILD_EXIT=${PIPESTATUS[0]}
-
-          echo ""
-          echo "========================================"
-          echo "GRADLE BUILD EXIT CODE: $BUILD_EXIT"
-          echo "========================================"
-
-          if [ "$BUILD_EXIT" -ne 0 ]; then
-            echo ""
-            echo "========== IMPORTANT BUILD ERRORS =========="
-
-            grep -n -E \
-              -B 5 -A 15 \
-              "What went wrong|Execution failed|error:|e: |FAILURE:" \
-              build.log || true
-
-            echo ""
-            echo "========== END BUILD ERRORS =========="
-
-            exit "$BUILD_EXIT"
-          fi
-
-      - name: Find generated APK
-        if: success()
+          echo "Gradle exit code: $?"
+          
+      - name: Display complete Gradle log
+        working-directory: "STEVE ADMIN"
         run: |
-          echo "Searching for APK..."
-          find "STEVE ADMIN/app/build" \
-            -type f \
-            -name "*.apk" \
-            -print
+          echo "========== COMPLETE GRADLE LOG =========="
+          cat build.log
+          echo "========== END GRADLE LOG =========="
+
+      - name: Upload Gradle log
+        uses: actions/upload-artifact@v4
+        with:
+          name: STEVE-ADMIN-build-log
+          path: "STEVE ADMIN/build.log"
+          if-no-files-found: error
+
+      - name: Stop if build failed
+        if: steps.build.outcome == 'failure'
+        run: |
+          echo "Gradle build failed."
+          exit 1
 
       - name: Upload debug APK
-        if: success()
+        if: steps.build.outcome == 'success'
         uses: actions/upload-artifact@v4
         with:
           name: STEVE-ADMIN-debug
