@@ -4,9 +4,9 @@ import android.app.admin.DevicePolicyManager
 import android.content.ComponentName
 import android.os.Bundle
 import android.os.UserManager
+import android.widget.Switch
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
-import com.google.android.material.switchmaterial.SwitchMaterial
 
 class MainActivity : AppCompatActivity() {
 
@@ -16,9 +16,9 @@ class MainActivity : AppCompatActivity() {
     private lateinit var ownerStatus: TextView
     private lateinit var statusText: TextView
 
-    private lateinit var factoryResetSwitch: SwitchMaterial
-    private lateinit var cameraSwitch: SwitchMaterial
-    private lateinit var masterSwitch: SwitchMaterial
+    private lateinit var factoryResetSwitch: Switch
+    private lateinit var cameraSwitch: Switch
+    private lateinit var masterSwitch: Switch
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -158,8 +158,10 @@ class MainActivity : AppCompatActivity() {
 
         statusText.text =
             "Factory reset: " +
-                    if (factoryBlocked) "BLOCKED" else "ALLOWED" +
+                    if (factoryBlocked) "BLOCKED"
+                    else "ALLOWED" +
                     "\nCamera: " +
-                    if (cameraBlocked) "DISABLED" else "ENABLED"
+                    if (cameraBlocked) "DISABLED"
+                    else "ENABLED"
     }
 }
