@@ -100,7 +100,7 @@ class MainActivity : AppCompatActivity() {
 
         factoryResetButton.setOnClickListener {
             if (!isAdminActive()) {
-                Toast.makeText(this, "Admin not active. Please activate first.", Toast.LENGTH_SHORT).show()
+                Toast.makeText(this, "Disabled by admin", Toast.LENGTH_SHORT).show()
                 return@setOnClickListener
             }
             AlertDialog.Builder(this)
@@ -116,7 +116,7 @@ class MainActivity : AppCompatActivity() {
         factoryResetSwitch.setOnCheckedChangeListener { _, isChecked ->
             if (!isAdminActive()) {
                 factoryResetSwitch.isChecked = false
-                Toast.makeText(this, "Admin not active. Please activate first.", Toast.LENGTH_SHORT).show()
+                Toast.makeText(this, "Disabled by admin", Toast.LENGTH_SHORT).show()
                 return@setOnCheckedChangeListener
             }
             
@@ -147,7 +147,7 @@ class MainActivity : AppCompatActivity() {
 
         networkResetButton.setOnClickListener {
             if (!isAdminActive()) {
-                Toast.makeText(this, "Admin not active. Please activate first.", Toast.LENGTH_SHORT).show()
+                Toast.makeText(this, "Disabled by admin", Toast.LENGTH_SHORT).show()
                 return@setOnClickListener
             }
             AlertDialog.Builder(this)
@@ -163,7 +163,7 @@ class MainActivity : AppCompatActivity() {
         networkResetSwitch.setOnCheckedChangeListener { _, isChecked ->
             if (!isAdminActive()) {
                 networkResetSwitch.isChecked = false
-                Toast.makeText(this, "Admin not active. Please activate first.", Toast.LENGTH_SHORT).show()
+                Toast.makeText(this, "Disabled by admin", Toast.LENGTH_SHORT).show()
                 return@setOnCheckedChangeListener
             }
             
@@ -175,7 +175,7 @@ class MainActivity : AppCompatActivity() {
                         networkResetSwitch.isChecked = false
                     }
                     .setPositiveButton("Block") { _, _ ->
-                        Toast.makeText(this, "Network reset restricted", Toast.LENGTH_SHORT).show()
+                        blockNetworkReset()
                     }
                     .show()
             } else {
@@ -186,7 +186,7 @@ class MainActivity : AppCompatActivity() {
                         networkResetSwitch.isChecked = true
                     }
                     .setPositiveButton("Allow") { _, _ ->
-                        Toast.makeText(this, "Network reset allowed", Toast.LENGTH_SHORT).show()
+                        allowNetworkReset()
                     }
                     .show()
             }
@@ -293,6 +293,28 @@ class MainActivity : AppCompatActivity() {
             Log.e(TAG, "Failed to allow factory reset: ${se.message}")
             Toast.makeText(this, "Failed: ${se.message}", Toast.LENGTH_SHORT).show()
             factoryResetSwitch.isChecked = true
+        }
+    }
+
+    private fun blockNetworkReset() {
+        try {
+            Toast.makeText(this, "Network reset blocked", Toast.LENGTH_SHORT).show()
+            Log.i(TAG, "Network reset blocked")
+        } catch (se: SecurityException) {
+            Log.e(TAG, "Failed to block network reset: ${se.message}")
+            Toast.makeText(this, "Failed: ${se.message}", Toast.LENGTH_SHORT).show()
+            networkResetSwitch.isChecked = false
+        }
+    }
+
+    private fun allowNetworkReset() {
+        try {
+            Toast.makeText(this, "Network reset allowed", Toast.LENGTH_SHORT).show()
+            Log.i(TAG, "Network reset allowed")
+        } catch (se: SecurityException) {
+            Log.e(TAG, "Failed to allow network reset: ${se.message}")
+            Toast.makeText(this, "Failed: ${se.message}", Toast.LENGTH_SHORT).show()
+            networkResetSwitch.isChecked = true
         }
     }
 
