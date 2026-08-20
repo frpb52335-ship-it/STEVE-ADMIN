@@ -33,14 +33,6 @@
             android:background="#cccccc" />
 
         <TextView
-            android:id="@+id/statusText"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="Status: Not set up"
-            android:textSize="15sp"
-            android:layout_marginBottom="20dp" />
-
-        <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="DEVICE MANAGEMENT"
@@ -48,83 +40,39 @@
             android:textStyle="bold"
             android:layout_marginBottom="16dp" />
 
-        <Button
-            android:id="@+id/activateAdminButton"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="Activate Admin"
-            android:textAllCaps="false"
-            android:layout_marginBottom="12dp" />
-
-        <Button
-            android:id="@+id/factoryResetButton"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="Factory Reset"
-            android:textAllCaps="false"
-            android:layout_marginBottom="12dp" />
-
         <Switch
-            android:id="@+id/factoryResetSwitch"
+            android:id="@+id/blockFactoryResetSwitch"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:text="Block Factory Reset"
             android:layout_marginBottom="12dp" />
 
-        <Button
-            android:id="@+id/networkResetButton"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="Network Reset"
-            android:textAllCaps="false"
-            android:layout_marginBottom="12dp" />
-
         <Switch
-            android:id="@+id/networkResetSwitch"
+            android:id="@+id/blockNetworkResetSwitch"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:text="Block Network Reset"
             android:layout_marginBottom="12dp" />
 
-        <View
-            android:layout_width="match_parent"
-            android:layout_height="1dp"
-            android:layout_marginTop="20dp"
-            android:layout_marginBottom="20dp"
-            android:background="#cccccc" />
-
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="DNS CONFIGURATION"
-            android:textSize="22sp"
-            android:textStyle="bold"
-            android:layout_marginBottom="16dp" />
-
-        <EditText
-            android:id="@+id/dnsHostEditText"
+        <Switch
+            android:id="@+id/blockWifiConfigSwitch"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:hint="Enter DNS hostname (disabled)"
-            android:inputType="text"
-            android:enabled="false"
+            android:text="Block Wi-Fi Configuration"
             android:layout_marginBottom="12dp" />
 
-        <Button
-            android:id="@+id/dnsApplyButton"
+        <Switch
+            android:id="@+id/blockBluetoothConfigSwitch"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Apply DNS"
-            android:textAllCaps="false"
-            android:enabled="false"
+            android:text="Block Bluetooth Configuration"
             android:layout_marginBottom="12dp" />
 
-        <TextView
-            android:id="@+id/dnsStatus"
+        <Switch
+            android:id="@+id/blockPrivateDnsSwitch"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="DNS: Disabled"
-            android:textSize="14sp"
+            android:text="Block Private DNS"
             android:layout_marginBottom="20dp" />
 
         <View
